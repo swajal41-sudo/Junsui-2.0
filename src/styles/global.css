@@ -1,0 +1,234 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Premium Dark Theme */
+  --bg-dark: #09090b;
+  --bg-gradient: radial-gradient(circle at 50% -20%, #1a1a2e 0%, #09090b 80%);
+  --card-bg: rgba(24, 24, 27, 0.6);
+  --card-border: rgba(255, 255, 255, 0.08);
+  
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  
+  --primary-btn: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-glow: rgba(99, 102, 241, 0.4);
+  
+  --absent-btn: #f43f5e;
+  --absent-glow: rgba(244, 63, 94, 0.3);
+  --present-btn: #10b981;
+  --present-glow: rgba(16, 185, 129, 0.3);
+  
+  --input-bg: rgba(0, 0, 0, 0.3);
+  --input-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Outfit', -apple-system, sans-serif;
+  background-color: var(--bg-dark);
+  background-image: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Polished Cards */
+.junsui-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.junsui-card-sm {
+  background: linear-gradient(145deg, rgba(30, 30, 35, 0.8), rgba(20, 20, 25, 0.8));
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 32px 24px;
+  width: 100%;
+  box-shadow: 0 15px 35px -5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Polished Buttons */
+.btn {
+  border: none;
+  border-radius: 12px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: white;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-btn), var(--primary-hover));
+  width: 100%;
+  padding: 16px 24px;
+  box-shadow: 0 8px 20px -6px var(--primary-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px -6px var(--primary-glow);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+/* Big Swipe Buttons */
+.btn-absent {
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: var(--absent-btn);
+  flex: 1;
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  box-shadow: 0 10px 30px -10px var(--absent-glow);
+}
+.btn-absent:hover {
+  background: rgba(244, 63, 94, 0.2);
+  border-color: var(--absent-btn);
+  transform: translateY(-2px);
+}
+.btn-absent:active { transform: translateY(1px) scale(0.98); }
+
+.btn-present {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--present-btn);
+  flex: 1;
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  box-shadow: 0 10px 30px -10px var(--present-glow);
+}
+.btn-present:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--present-btn);
+  transform: translateY(-2px);
+}
+.btn-present:active { transform: translateY(1px) scale(0.98); }
+
+.btn-undo {
+  background-color: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--text-secondary);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 16px;
+}
+.btn-undo:hover:not(:disabled) {
+  background: rgba(255,255,255,0.05);
+  color: white;
+}
+.btn-undo:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Polished Inputs */
+.input-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.junsui-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: white;
+  font-size: 15px;
+  font-family: 'Outfit', sans-serif;
+  appearance: none;
+  transition: all 0.2s;
+}
+
+.junsui-input:focus {
+  outline: none;
+  border-color: var(--primary-btn);
+  background: rgba(0,0,0,0.5);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* Dropdown Arrow */
+.select-wrapper { position: relative; }
+.select-wrapper::after {
+  content: '⌄';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-60%);
+  color: var(--text-secondary);
+  pointer-events: none;
+  font-size: 20px;
+}
+
+/* Headers */
+.setup-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--card-border);
+}
+
+h1 {
+  font-size: 28px;
+  margin: 0 0 8px 0;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin: 0 0 32px 0;
+}
