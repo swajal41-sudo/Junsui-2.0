@@ -1,63 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { TIME_SLOTS, getCurrentSlot, getNextSlot, formatTime12h, isWorkingDay, isHolidaySaturday } from '../db/timetable';
 
 const branches = [
-  { value: 'CSE', label: 'Computer Science (CSE) - 2nd Year' },
-  { value: 'ETC', label: 'Electronics & Telecomm (ETC) - 2nd Year' },
-  { value: 'CSE-DS', label: 'Data Science (CSE-DS) - 2nd Year' },
-  { value: 'CSE-CS', label: 'Cyber Security (CSE-CS) - 2nd Year' }
+  { value: 'CSE', label: 'Computer Science (CSE) - 2nd Year', count: 44 },
+  { value: 'ETC', label: 'Electronics & Telecomm (ETC) - 2nd Year', count: 51 },
+  { value: 'CSE-DS', label: 'Data Science (CSE-DS) - 2nd Year', count: 54 },
+  { value: 'CSE-CS', label: 'Cyber Security (CSE-CS) - 2nd Year', count: 48 }
 ];
 
 const subjects = [
-  "Data Structures", "Object Oriented Programming", "Database Management Systems", "Computer Networks", "Operating Systems"
+  "Data Structures", "Object Oriented Programming", "Database Management Systems", 
+  "Computer Networks", "Operating Systems"
 ];
 
-// Dummy Timetable (User can update this)
-const timeTable = {
-  // 1 = Monday, 2 = Tuesday, etc.
-  1: { 10: "Data Structures", 11: "Object Oriented Programming", 12: "Database Management Systems" },
-  2: { 10: "Operating Systems", 11: "Computer Networks", 12: "Data Structures" },
-  3: { 10: "Database Management Systems", 11: "Operating Systems", 12: "Object Oriented Programming" },
-  4: { 10: "Computer Networks", 11: "Data Structures", 12: "Operating Systems" },
-  5: { 10: "Object Oriented Programming", 11: "Database Management Systems", 12: "Computer Networks" },
-};
+// Auto-detect current or next lecture slot
+function getAutoSlot() {
+  const now = new Date();
+  const current = getCurrentSlot(now);
+  if (current) return current;
+  
+  const next = getNextSlot(now);
+  if (next) return next;
+  
+  return TIME_SLOTS[0]; // Default to first slot
+}
 
 export default function Setup() {
   const navigate = useNavigate();
-  const [branch, setBranch] = useState('CSE');
+  const now = new Date();
+  const autoSlot = getAutoSlot();
+  const isHoliday = !isWorkingDay(now);
+  const is2nd4thSat = isHolidaySaturday(now);
   
-  // Auto-detect subject and time based on current time
-  const [subject, setSubject] = useState(() => {
-    const day = new Date().getDay();
-    const hour = new Date().getHours();
-    
-    // Check if we have a subject for current day and hour
-    if (timeTable[day] && timeTable[day][hour]) {
-      return timeTable[day][hour];
-    }
-    return "Data Structures"; // Default fallback
-  });
+  const [branch, setBranch] = useState('CSE');
+  const [subject, setSubject] = useState(subjects[0]);
+  const [selectedSlot, setSelectedSlot] = useState(autoSlot.id);
 
   const [date, setDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0]; // Auto-set today's date
+    return now.toISOString().split('T')[0];
   }); 
-  
-  const [duration, setDuration] = useState('60');
-  
-  const [startH, setStartH] = useState(() => new Date().getHours());
-  const [startM, setStartM] = useState(() => new Date().getMinutes());
-  const [endH, setEndH] = useState(() => (new Date().getHours() + 1) % 24);
-  const [endM, setEndM] = useState(() => new Date().getMinutes());
   
   const [numStudents, setNumStudents] = useState(44);
 
+  const handleBranchChange = (value) => {
+    setBranch(value);
+    const found = branches.find(b => b.value === value);
+    if (found) setNumStudents(found.count);
+  };
+
   const handleStart = () => {
+    const slot = TIME_SLOTS.find(s => s.id === selectedSlot) || TIME_SLOTS[0];
     const sessionData = {
       branch,
       subject,
       date,
-      numStudents
+      numStudents,
+      timeSlot: `${formatTime12h(slot.startH, slot.startM)} - ${formatTime12h(slot.endH, slot.endM)}`
     };
     localStorage.setItem('junsui_current_session', JSON.stringify(sessionData));
     navigate('/call');
@@ -79,10 +78,26 @@ export default function Setup() {
         <h1>New Session</h1>
         <p className="subtitle">Set up your attendance session</p>
 
+        {/* Holiday Warning */}
+        {isHoliday && (
+          <div style={{ 
+            background: 'rgba(251, 191, 36, 0.1)', 
+            border: '1px solid rgba(251, 191, 36, 0.3)', 
+            color: '#fbbf24', 
+            padding: '12px 16px', 
+            borderRadius: '12px', 
+            marginBottom: '20px', 
+            fontSize: '13px',
+            fontWeight: 500
+          }}>
+            ⚠️ {is2nd4thSat ? "Today is 2nd/4th Saturday — Holiday!" : "Today is Sunday — Holiday!"}
+          </div>
+        )}
+
         <div className="input-group">
           <label className="input-label">Class / Branch</label>
           <div className="select-wrapper">
-            <select className="junsui-input" value={branch} onChange={e => setBranch(e.target.value)}>
+            <select className="junsui-input" value={branch} onChange={e => handleBranchChange(e.target.value)}>
               {branches.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}
             </select>
           </div>
@@ -98,37 +113,25 @@ export default function Setup() {
         </div>
 
         <div className="input-group">
-          <label className="input-label">Class Duration</label>
+          <label className="input-label">Lecture Slot</label>
           <div className="select-wrapper">
-            <select className="junsui-input" value={duration} onChange={e => setDuration(e.target.value)}>
-              <option value="60">60 minutes (1 class)</option>
+            <select className="junsui-input" value={selectedSlot} onChange={e => setSelectedSlot(parseInt(e.target.value))}>
+              {TIME_SLOTS.map(slot => (
+                <option key={slot.id} value={slot.id}>
+                  {slot.label} — {formatTime12h(slot.startH, slot.startM)} to {formatTime12h(slot.endH, slot.endM)}
+                  {slot.id === autoSlot.id ? ' ✦' : ''}
+                </option>
+              ))}
             </select>
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            ✦ Auto-detected based on current time
           </div>
         </div>
 
         <div className="input-group">
           <label className="input-label">Lecture Date</label>
           <input type="date" className="junsui-input" value={date} onChange={e => setDate(e.target.value)} style={{ colorScheme: 'dark' }} />
-        </div>
-
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
-           <div style={{ flex: 1 }}>
-             <label className="input-label" style={{ display: 'block', marginBottom: '8px' }}>Start Time</label>
-             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-               <input type="number" className="junsui-input" value={startH} onChange={e => setStartH(e.target.value)} style={{ textAlign: 'center' }} />
-               <span style={{ fontWeight: 700 }}>:</span>
-               <input type="number" className="junsui-input" value={startM} onChange={e => setStartM(e.target.value)} style={{ textAlign: 'center' }} />
-             </div>
-           </div>
-           <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: '24px' }}>to</div>
-           <div style={{ flex: 1 }}>
-             <label className="input-label" style={{ display: 'block', marginBottom: '8px' }}>End Time</label>
-             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-               <input type="number" className="junsui-input" value={endH} onChange={e => setEndH(e.target.value)} style={{ textAlign: 'center' }} />
-               <span style={{ fontWeight: 700 }}>:</span>
-               <input type="number" className="junsui-input" value={endM} onChange={e => setEndM(e.target.value)} style={{ textAlign: 'center' }} />
-             </div>
-           </div>
         </div>
 
         <div className="input-group" style={{ marginBottom: '32px' }}>
