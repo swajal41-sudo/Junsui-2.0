@@ -202,10 +202,19 @@ export default function Setup() {
 
         <div className="input-group">
           <label className="input-label">Subject</label>
-          <div className="select-wrapper">
-            <select className="junsui-input" value={subject} onChange={e => setSubject(e.target.value)}>
-              {allSubjects.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
+          <div className="select-wrapper" style={{ display: 'block' }}>
+            <input 
+              type="text"
+              className="junsui-input" 
+              value={subject} 
+              onChange={e => setSubject(e.target.value)}
+              list="subject-list"
+              placeholder="Select or type subject..."
+              style={{ padding: '12px 16px', width: '100%' }}
+            />
+            <datalist id="subject-list">
+              {allSubjects.map(s => <option key={s} value={s} />)}
+            </datalist>
           </div>
         </div>
 

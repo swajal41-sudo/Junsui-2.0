@@ -244,9 +244,18 @@ export default function MonthlyTable() {
           </div>
           <div style={{ flex: '2 1 200px' }}>
             <label style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Subject</label>
-            <select className="junsui-input" value={subject} onChange={e => setSubject(e.target.value)} style={{ padding: '8px 12px' }}>
-              {uniqueSubjects.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <input 
+              type="text"
+              className="junsui-input" 
+              value={subject} 
+              onChange={e => setSubject(e.target.value)} 
+              list="monthly-subject-list"
+              placeholder="Select or type subject"
+              style={{ padding: '8px 12px', width: '100%' }}
+            />
+            <datalist id="monthly-subject-list">
+              {uniqueSubjects.map(s => <option key={s} value={s} />)}
+            </datalist>
           </div>
           <div style={{ flex: '1 1 120px' }}>
             <label style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Month</label>
