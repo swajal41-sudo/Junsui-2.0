@@ -10,7 +10,7 @@
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Firebase](https://img.shields.io/badge/Firebase-Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
 [![Dexie.js](https://img.shields.io/badge/Dexie.js-IndexedDB-3B82F6?style=for-the-badge)](https://dexie.org/)
-[![License](https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge)](#license)
+
 
 ---
 
@@ -278,10 +278,6 @@ git push origin feature/amazing-feature
 - GitHub: [@swajal41-sudo](https://github.com/swajal41-sudo)
 
 ---
-
-## 📄 License
-
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
 ---
 
