@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Calendar, Filter } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, Filter, CloudUpload, ExternalLink, CheckCircle } from 'lucide-react';
 import { db } from '../db/db';
 import { studentDataMap } from '../db/students';
 import { CSE_SUBJECTS, CSE_LABS } from '../db/timetable';
@@ -28,6 +28,12 @@ export default function MonthlyTable() {
   const [subject, setSubject] = useState(uniqueSubjects[0]);
   const [month, setMonth] = useState(() => new Date().getMonth() + 1); // 1-12
   const [year, setYear] = useState(() => new Date().getFullYear());
+  
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
+  
+  const webAppUrl = import.meta.env.VITE_GOOGLE_SHEET_WEB_APP_URL;
+  const viewLink = import.meta.env.VITE_GOOGLE_SHEET_VIEW_LINK;
 
   useEffect(() => {
     // Format month for searching (e.g. '2026-07')
@@ -130,6 +136,62 @@ export default function MonthlyTable() {
     document.body.removeChild(link);
   };
 
+  const handleSyncToLiveSheet = async () => {
+    if (!webAppUrl) {
+      alert("Google Sheets Web App URL is not configured in .env file.");
+      return;
+    }
+    
+    setIsSyncing(true);
+    setSyncSuccess(false);
+    
+    try {
+      const { studentMap, classDays } = gridData;
+      const headers = ['Roll No', 'Name', ...classDays.map(d => `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`), 'Total Present', 'Total Classes', 'Attendance %'];
+      
+      const rows = [];
+      for (let i = 1; i <= numStudents; i++) {
+        const row = [i, branchStudents[i-1] || `Student ${i}`];
+        classDays.forEach(d => {
+          row.push(studentMap[i].days[d] || ''); // Empty string for blank cells
+        });
+        const stats = studentMap[i];
+        const percentage = stats.totalClasses > 0 ? Math.round((stats.presentCount / stats.totalClasses) * 100) : 0;
+        row.push(stats.presentCount, stats.totalClasses, `${percentage}%`);
+        rows.push(row);
+      }
+      
+      const payload = {
+        branch: branch,
+        subject: subject,
+        yearMonth: `${year}-${String(month).padStart(2,'0')}`,
+        headers: headers,
+        rows: rows
+      };
+      
+      const response = await fetch(webAppUrl, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        }
+      });
+      
+      const result = await response.json();
+      if (result.status === 'success') {
+        setSyncSuccess(true);
+        setTimeout(() => setSyncSuccess(false), 5000);
+      } else {
+        alert("Sync failed: " + (result.message || "Unknown error"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to sync with Google Sheets. Check console for details.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div style={{ padding: '20px', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: '1000px', display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -142,9 +204,34 @@ export default function MonthlyTable() {
             </button>
             <h1 style={{ margin: 0, fontSize: '24px' }}>Monthly View</h1>
           </div>
-          <button className="btn btn-primary" onClick={handleExportCSV} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '13px' }}>
-            <Download size={16} /> Export to Sheets
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {webAppUrl ? (
+              <button 
+                className="btn btn-primary" 
+                onClick={handleSyncToLiveSheet} 
+                disabled={isSyncing}
+                style={{ 
+                  display: 'flex', alignItems: 'center', gap: '8px', 
+                  padding: '8px 16px', fontSize: '13px',
+                  background: syncSuccess ? 'var(--present-btn)' : '',
+                  borderColor: syncSuccess ? 'var(--present-btn)' : ''
+                }}
+              >
+                {syncSuccess ? <CheckCircle size={16} /> : <CloudUpload size={16} />} 
+                {syncSuccess ? 'Synced Successfully!' : isSyncing ? 'Syncing...' : 'Sync to Live Sheet'}
+              </button>
+            ) : (
+              <button className="btn btn-primary" onClick={handleExportCSV} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '13px' }}>
+                <Download size={16} /> Export to Sheets
+              </button>
+            )}
+            
+            {viewLink && (
+              <a href={viewLink} target="_blank" rel="noreferrer" className="btn" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '13px', textDecoration: 'none', color: 'white' }}>
+                <ExternalLink size={16} /> Open Live Sheet
+              </a>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
