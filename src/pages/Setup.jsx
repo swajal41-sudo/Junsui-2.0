@@ -147,23 +147,45 @@ export default function Setup() {
           <label className="input-label">Lecture Slot</label>
           <div className="select-wrapper">
             <select className="junsui-input" value={selectedSlot} onChange={e => handleSlotChange(parseInt(e.target.value))}>
-              {TIME_SLOTS.map((slot, idx) => {
-                // Show subject from timetable if CSE
-                let slotSubject = '';
-                if (branch === 'CSE' && todaySchedule && todaySchedule[idx]?.subject) {
-                  slotSubject = ` — ${todaySchedule[idx].subject}`;
-                  if (todaySchedule[idx].isLab) slotSubject += ' 🔬';
-                } else if (branch === 'CSE' && todaySchedule && todaySchedule[idx]?.label) {
-                  slotSubject = ` — ${todaySchedule[idx].label}`;
+              {(() => {
+                const options = [];
+                const skip = new Set();
+                
+                for (let idx = 0; idx < TIME_SLOTS.length; idx++) {
+                  if (skip.has(idx)) continue;
+                  
+                  const slot = TIME_SLOTS[idx];
+                  const entry = (branch === 'CSE' && todaySchedule) ? todaySchedule[idx] : null;
+                  const nextEntry = (branch === 'CSE' && todaySchedule && idx + 1 < TIME_SLOTS.length) ? todaySchedule[idx + 1] : null;
+                  
+                  // Check if this is a 2-hour lab (same lab in next slot)
+                  const is2HrLab = entry?.isLab && nextEntry?.isLab && entry.subject === nextEntry.subject;
+                  
+                  let label = '';
+                  let endSlot = slot;
+                  
+                  if (is2HrLab) {
+                    endSlot = TIME_SLOTS[idx + 1];
+                    skip.add(idx + 1); // Skip next slot
+                    label = `🔬 ${entry.subject} — ${formatTime12h(slot.startH, slot.startM)} – ${formatTime12h(endSlot.endH, endSlot.endM)} (2 hrs)`;
+                  } else if (entry?.subject) {
+                    label = `${slot.label}: ${formatTime12h(slot.startH, slot.startM)} – ${formatTime12h(slot.endH, slot.endM)} — ${entry.subject}`;
+                    if (entry.isLab) label += ' 🔬';
+                  } else if (entry?.label) {
+                    label = `${slot.label}: ${formatTime12h(slot.startH, slot.startM)} – ${formatTime12h(slot.endH, slot.endM)} — ${entry.label}`;
+                  } else {
+                    label = `${slot.label}: ${formatTime12h(slot.startH, slot.startM)} – ${formatTime12h(slot.endH, slot.endM)}`;
+                  }
+                  
+                  if (slot.id === autoDetected?.slot?.id) label += ' ✦';
+                  
+                  options.push(
+                    <option key={slot.id} value={slot.id}>{label}</option>
+                  );
                 }
                 
-                return (
-                  <option key={slot.id} value={slot.id}>
-                    {slot.label}: {formatTime12h(slot.startH, slot.startM)} – {formatTime12h(slot.endH, slot.endM)}{slotSubject}
-                    {slot.id === autoDetected?.slot?.id ? ' ✦' : ''}
-                  </option>
-                );
-              })}
+                return options;
+              })()}
             </select>
           </div>
           {branch === 'CSE' && (
