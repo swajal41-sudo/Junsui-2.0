@@ -44,18 +44,21 @@ export default function Call() {
     setQueue(updatedQueue);
 
     // Persist to Dexie for history
-    db.attendance.add({
-      studentId: currentRoll,
-      date: session.date,
-      status: status === 'present' ? 'Present' : 'Absent',
-      timestamp: new Date().toISOString(),
-      subject: session.subject,
-      timeSlot: session.timeSlot || '',
-      branch: session.branch
-    }).catch(err => console.error('Dexie save failed:', err));
+    if (session.branch !== 'DEMO') {
+      db.attendance.add({
+        studentId: currentRoll,
+        date: session.date,
+        status: status === 'present' ? 'Present' : 'Absent',
+        timestamp: new Date().toISOString(),
+        subject: session.subject,
+        timeSlot: session.timeSlot || '',
+        branch: session.branch
+      }).catch(err => console.error('Dexie save failed:', err));
+    }
     
     // Move to next student
     setTimeout(() => {
+      setExitDirection(0);
       if (currentRoll < session.numStudents) {
         setCurrentRoll(prev => prev + 1);
       } else {
@@ -69,14 +72,15 @@ export default function Call() {
     if (queue.length === 0) return;
     triggerHaptic([15]);
     const newQueue = [...queue];
-    const removed = newQueue.pop();
+    const lastRecord = newQueue.pop();
     setQueue(newQueue);
     setCurrentRoll(prev => prev - 1);
+    setExitDirection(0);
 
-    // Remove from Dexie too
-    if (removed && session) {
+    // Remove from Dexie
+    if (lastRecord && session && session.branch !== 'DEMO') {
       db.attendance
-        .where({ studentId: removed.rollNo, date: session.date, subject: session.subject, branch: session.branch })
+        .where({ studentId: lastRecord.rollNo, date: session.date, subject: session.subject, branch: session.branch })
         .last()
         .then(record => { if (record) db.attendance.delete(record.id); })
         .catch(err => console.error('Dexie undo failed:', err));
@@ -98,7 +102,8 @@ export default function Call() {
 
   if (!session) return null;
 
-  const branchStudents = studentDataMap[session.branch] || [];
+  const demoNames = ["Babu Rao", "Raju", "Shyam", "Anuradha", "Khadak Singh", "Totla Seth", "Devi Prasad", "Kachra Seth", "Nanji Bhai", "Chote"];
+  const branchStudents = session.branch === 'DEMO' ? demoNames : (studentDataMap[session.branch] || []);
   const studentName = branchStudents[currentRoll - 1] || `Student ${currentRoll}`;
   const formattedRoll = `${session.branch}-${currentRoll.toString().padStart(3, '0')}`;
 

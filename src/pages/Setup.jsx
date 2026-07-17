@@ -96,7 +96,9 @@ export default function Setup() {
       <div className="junsui-card">
         
         <div className="setup-header">
-          <div style={{ width: 40, height: 40, background: 'var(--input-bg)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>GNIT</div>
+          <div style={{ width: 48, height: 48, background: 'var(--primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
+            <img src="/logo.png" alt="Junsui Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700 }}>Guru Nanak Institute of Technology</div>
             <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>Nagpur — Attendance Management System</div>

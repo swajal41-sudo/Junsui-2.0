@@ -20,7 +20,9 @@ export default function Report() {
       const parsedSession = JSON.parse(sessionData);
       setSession(parsedSession);
       setQueue(JSON.parse(queueData));
-      setBranchStudents(studentDataMap[parsedSession.branch] || []);
+      
+      const demoNames = ["Babu Rao", "Raju", "Shyam", "Anuradha", "Khadak Singh", "Totla Seth", "Devi Prasad", "Kachra Seth", "Nanji Bhai", "Chote"];
+      setBranchStudents(parsedSession.branch === 'DEMO' ? demoNames : (studentDataMap[parsedSession.branch] || []));
     } else {
       navigate('/');
     }
@@ -182,6 +184,21 @@ export default function Report() {
               })}
             </tbody>
           </table>
+        </div>
+
+        <div style={{ marginTop: '32px', marginBottom: '32px' }}>
+          <button 
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '16px', fontSize: '16px' }}
+            onClick={() => {
+              // Clear the temporary active session since we already saved it to Dexie
+              localStorage.removeItem('junsui_current_session');
+              localStorage.removeItem('junsui_attendance_queue');
+              navigate('/');
+            }}
+          >
+            {session.branch === 'DEMO' ? 'End Demo & Return' : 'Finish Session & Return'}
+          </button>
         </div>
 
       </div>

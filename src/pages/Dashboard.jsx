@@ -67,6 +67,17 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', width: '100%', maxWidth: '480px' }}>
+        <div style={{ width: 56, height: 56, background: 'var(--primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 8px 24px rgba(99,102,241,0.4)' }}>
+          <img src="/logo.png" alt="Junsui Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+        <div>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Welcome to Junsui</div>
+          <div style={{ fontSize: '24px', fontWeight: 800 }}>GNIT Nagpur</div>
+        </div>
+      </div>
+
       {/* Quick Action Card */}
       <div className="junsui-card" style={{ marginBottom: '20px' }}>
         <h2 style={{ marginBottom: '16px', fontSize: '20px' }}>Take Attendance</h2>
@@ -93,6 +104,23 @@ export default function Dashboard() {
             <BookOpen size={18} /> Monthly Table (Export to Sheets)
           </button>
         </div>
+        
+        <button 
+          className="btn" 
+          style={{ width: '100%', background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.3)', color: '#fbbf24', padding: '12px', marginTop: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+          onClick={() => {
+            navigate('/call', {
+              state: {
+                branch: 'DEMO',
+                subject: 'Interactive Demo Session',
+                date: new Date().toISOString().split('T')[0],
+                numStudents: 5
+              }
+            });
+          }}
+        >
+          <Play size={18} fill="currentColor" /> Try Demo Mode (Testing)
+        </button>
       </div>
 
       {/* Today's Schedule */}
