@@ -245,6 +245,7 @@ db.version(3).stores({
 
 ## 🔮 Roadmap
 
+- [ ] 📅 **Timetable Integration** — Editable timetable page with full weekly schedule, auto-fill session setup based on current day/time, and one-tap attendance start directly from the timetable
 - [ ] Cloud sync with Firebase Firestore
 - [ ] Google Sheets integration (restore from v1.0)
 - [ ] Cumulative attendance analytics & defaulter alerts
