@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   TIME_SLOTS, CSE_SUBJECTS, CSE_LABS, CSE_TIMETABLE,
+  CSE_CS_SUBJECTS, CSE_CS_LABS, CSE_CS_TIMETABLE,
   getAutoDetectedSlot, getSubjectName, formatTime12h, 
-  isWorkingDay, isHolidaySaturday 
+  isWorkingDay, isHolidaySaturday, getTimetableForBranch
 } from '../db/timetable';
 
 const branches = [
@@ -13,10 +14,11 @@ const branches = [
   { value: 'CSE-CS', label: 'Cyber Security (CSE-CS) - 2nd Year', count: 48 }
 ];
 
-// All unique subject names (theory + labs)
 const allSubjects = [
   ...CSE_SUBJECTS.map(s => s.name),
   ...CSE_LABS.map(l => l.name),
+  ...CSE_CS_SUBJECTS.map(s => s.name),
+  ...CSE_CS_LABS.map(l => l.name),
 ];
 
 export default function Setup() {
@@ -25,12 +27,13 @@ export default function Setup() {
   const isHoliday = !isWorkingDay(now);
   const is2nd4thSat = isHolidaySaturday(now);
   
-  // Auto-detect from timetable
-  const autoDetected = getAutoDetectedSlot(now);
-  const autoSubjectCode = autoDetected?.entry?.subject;
-  const autoSubjectName = getSubjectName(autoSubjectCode);
-  
   const [branch, setBranch] = useState('CSE');
+  
+  // Auto-detect from timetable
+  const autoDetected = getAutoDetectedSlot(now, branch);
+  const autoSubjectCode = autoDetected?.entry?.subject;
+  const autoSubjectName = getSubjectName(autoSubjectCode, branch);
+  
   const [subject, setSubject] = useState(autoSubjectName || allSubjects[0]);
   const [selectedSlot, setSelectedSlot] = useState(autoDetected?.slot?.id || 1);
   const [date, setDate] = useState(() => now.toISOString().split('T')[0]); 
@@ -43,26 +46,27 @@ export default function Setup() {
     const found = branches.find(b => b.value === value);
     if (found) setNumStudents(found.count);
     
-    // Only auto-detect for CSE (we have the timetable)
-    if (value === 'CSE' && autoDetectEnabled) {
-      const detected = getAutoDetectedSlot(new Date());
+    // Auto-detect for supported branches
+    if ((value === 'CSE' || value === 'CSE-CS') && autoDetectEnabled) {
+      const detected = getAutoDetectedSlot(new Date(), value);
       if (detected?.entry?.subject) {
-        setSubject(getSubjectName(detected.entry.subject) || allSubjects[0]);
+        setSubject(getSubjectName(detected.entry.subject, value) || allSubjects[0]);
         setSelectedSlot(detected.slot.id);
       }
     }
   };
 
-  // When slot changes manually, update subject from timetable (if CSE)
+  // When slot changes manually, update subject from timetable
   const handleSlotChange = (slotId) => {
     setSelectedSlot(slotId);
     
-    if (branch === 'CSE') {
+    const timetable = getTimetableForBranch(branch);
+    if (timetable) {
       const day = new Date(date).getDay() || now.getDay();
-      if (CSE_TIMETABLE[day]) {
-        const entry = CSE_TIMETABLE[day][slotId - 1];
+      if (timetable[day]) {
+        const entry = timetable[day][slotId - 1];
         if (entry?.subject) {
-          const name = getSubjectName(entry.subject);
+          const name = getSubjectName(entry.subject, branch);
           if (name) setSubject(name);
         }
       }
@@ -71,7 +75,8 @@ export default function Setup() {
 
   // Get today's schedule for the info bar
   const day = now.getDay();
-  const todaySchedule = (branch === 'CSE' && CSE_TIMETABLE[day]) ? CSE_TIMETABLE[day] : null;
+  const timetable = getTimetableForBranch(branch);
+  const todaySchedule = timetable ? timetable[day] : null;
 
   const handleStart = () => {
     const slot = TIME_SLOTS.find(s => s.id === selectedSlot) || TIME_SLOTS[0];
@@ -117,8 +122,8 @@ export default function Setup() {
           </div>
         )}
 
-        {/* Auto-Detect Banner (CSE only) */}
-        {branch === 'CSE' && autoSubjectName && !isHoliday && (
+        {/* Auto-Detect Banner */}
+        {timetable && autoSubjectName && !isHoliday && (
           <div style={{ 
             background: 'rgba(99, 102, 241, 0.08)', 
             border: '1px solid rgba(99, 102, 241, 0.2)', 
@@ -155,8 +160,8 @@ export default function Setup() {
                   if (skip.has(idx)) continue;
                   
                   const slot = TIME_SLOTS[idx];
-                  const entry = (branch === 'CSE' && todaySchedule) ? todaySchedule[idx] : null;
-                  const nextEntry = (branch === 'CSE' && todaySchedule && idx + 1 < TIME_SLOTS.length) ? todaySchedule[idx + 1] : null;
+                  const entry = timetable && todaySchedule ? todaySchedule[idx] : null;
+                  const nextEntry = (timetable && todaySchedule && idx + 1 < TIME_SLOTS.length) ? todaySchedule[idx + 1] : null;
                   
                   // Check if this is a 2-hour lab (same lab in next slot)
                   const is2HrLab = entry?.isLab && nextEntry?.isLab && entry.subject === nextEntry.subject;
@@ -188,9 +193,9 @@ export default function Setup() {
               })()}
             </select>
           </div>
-          {branch === 'CSE' && (
+          {timetable && (
             <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              ✦ Current/next lecture auto-detected from CSE timetable
+              ✦ Current/next lecture auto-detected from timetable
             </div>
           )}
         </div>

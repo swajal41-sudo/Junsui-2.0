@@ -3,19 +3,24 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Play, Clock, BookOpen, CalendarDays } from 'lucide-react';
 import { 
-  CSE_TIMETABLE, TIME_SLOTS, WORKING_DAYS,
+  TIME_SLOTS, WORKING_DAYS,
   isWorkingDay, isHolidaySaturday, getCurrentLecture, 
-  getSubjectName, formatTime12h 
+  getSubjectName, formatTime12h, getTimetableForBranch
 } from '../db/timetable';
 
 export default function Dashboard() {
   const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
+  // Try to get branch from previous session to show the correct dashboard timetable
+  const lastSession = localStorage.getItem('junsui_current_session');
+  const branch = lastSession ? JSON.parse(lastSession).branch : 'CSE';
+
   const now = new Date();
   const day = now.getDay();
   const isHoliday = !isWorkingDay(now);
-  const todaySchedule = CSE_TIMETABLE[day] || null;
-  const currentLecture = getCurrentLecture(now);
+  const timetable = getTimetableForBranch(branch);
+  const todaySchedule = timetable ? timetable[day] : null;
+  const currentLecture = getCurrentLecture(now, branch);
   const dayName = WORKING_DAYS.find(d => d.id === day)?.name || 'Sunday';
 
   async function handleLogout() {
@@ -53,7 +58,7 @@ export default function Dashboard() {
             🔴 Now — {currentLecture.slot.label}
           </div>
           <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '6px' }}>
-            {getSubjectName(currentLecture.entry.subject)}
+            {getSubjectName(currentLecture.entry.subject, branch)}
           </div>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
             {formatTime12h(currentLecture.slot.startH, currentLecture.slot.startM)} – {formatTime12h(currentLecture.slot.endH, currentLecture.slot.endM)}
@@ -79,17 +84,28 @@ export default function Dashboard() {
           >
             <Clock size={18} /> View Past History
           </button>
+          
+          <button 
+            className="btn" 
+            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', padding: '14px', color: '#a5b4fc' }} 
+            onClick={() => navigate('/monthly')}
+          >
+            <BookOpen size={18} /> Monthly Table (Export to Sheets)
+          </button>
         </div>
       </div>
 
       {/* Today's Schedule */}
       {!isHoliday && todaySchedule && (
         <div style={{ width: '100%', maxWidth: '480px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <CalendarDays size={16} color="var(--text-secondary)" />
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Today's Schedule — {dayName}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CalendarDays size={16} color="var(--text-secondary)" />
+              <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                Today's Schedule — {dayName}
+              </span>
+            </div>
+            <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '10px' }}>{branch}</span>
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -114,7 +130,7 @@ export default function Dashboard() {
                   skip.add(i + 1);
                 }
                 
-                const subjectName = entry?.subject ? getSubjectName(entry.subject) : entry?.label || 'Free';
+                const subjectName = entry?.subject ? getSubjectName(entry.subject, branch) : entry?.label || 'Free';
                 
                 items.push(
                   <div key={i} style={{ 
