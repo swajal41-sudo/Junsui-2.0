@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TIME_SLOTS, getCurrentSlot, getNextSlot, formatTime12h, isWorkingDay, isHolidaySaturday } from '../db/timetable';
+import { 
+  TIME_SLOTS, CSE_SUBJECTS, CSE_LABS, CSE_TIMETABLE,
+  getAutoDetectedSlot, getSubjectName, formatTime12h, 
+  isWorkingDay, isHolidaySaturday 
+} from '../db/timetable';
 
 const branches = [
   { value: 'CSE', label: 'Computer Science (CSE) - 2nd Year', count: 44 },
@@ -9,45 +13,65 @@ const branches = [
   { value: 'CSE-CS', label: 'Cyber Security (CSE-CS) - 2nd Year', count: 48 }
 ];
 
-const subjects = [
-  "Data Structures", "Object Oriented Programming", "Database Management Systems", 
-  "Computer Networks", "Operating Systems"
+// All unique subject names (theory + labs)
+const allSubjects = [
+  ...CSE_SUBJECTS.map(s => s.name),
+  ...CSE_LABS.map(l => l.name),
 ];
-
-// Auto-detect current or next lecture slot
-function getAutoSlot() {
-  const now = new Date();
-  const current = getCurrentSlot(now);
-  if (current) return current;
-  
-  const next = getNextSlot(now);
-  if (next) return next;
-  
-  return TIME_SLOTS[0]; // Default to first slot
-}
 
 export default function Setup() {
   const navigate = useNavigate();
   const now = new Date();
-  const autoSlot = getAutoSlot();
   const isHoliday = !isWorkingDay(now);
   const is2nd4thSat = isHolidaySaturday(now);
   
-  const [branch, setBranch] = useState('CSE');
-  const [subject, setSubject] = useState(subjects[0]);
-  const [selectedSlot, setSelectedSlot] = useState(autoSlot.id);
-
-  const [date, setDate] = useState(() => {
-    return now.toISOString().split('T')[0];
-  }); 
+  // Auto-detect from timetable
+  const autoDetected = getAutoDetectedSlot(now);
+  const autoSubjectCode = autoDetected?.entry?.subject;
+  const autoSubjectName = getSubjectName(autoSubjectCode);
   
+  const [branch, setBranch] = useState('CSE');
+  const [subject, setSubject] = useState(autoSubjectName || allSubjects[0]);
+  const [selectedSlot, setSelectedSlot] = useState(autoDetected?.slot?.id || 1);
+  const [date, setDate] = useState(() => now.toISOString().split('T')[0]); 
   const [numStudents, setNumStudents] = useState(44);
+  const [autoDetectEnabled, setAutoDetectEnabled] = useState(true);
 
+  // When branch changes, update student count and re-trigger auto-detect
   const handleBranchChange = (value) => {
     setBranch(value);
     const found = branches.find(b => b.value === value);
     if (found) setNumStudents(found.count);
+    
+    // Only auto-detect for CSE (we have the timetable)
+    if (value === 'CSE' && autoDetectEnabled) {
+      const detected = getAutoDetectedSlot(new Date());
+      if (detected?.entry?.subject) {
+        setSubject(getSubjectName(detected.entry.subject) || allSubjects[0]);
+        setSelectedSlot(detected.slot.id);
+      }
+    }
   };
+
+  // When slot changes manually, update subject from timetable (if CSE)
+  const handleSlotChange = (slotId) => {
+    setSelectedSlot(slotId);
+    
+    if (branch === 'CSE') {
+      const day = new Date(date).getDay() || now.getDay();
+      if (CSE_TIMETABLE[day]) {
+        const entry = CSE_TIMETABLE[day][slotId - 1];
+        if (entry?.subject) {
+          const name = getSubjectName(entry.subject);
+          if (name) setSubject(name);
+        }
+      }
+    }
+  };
+
+  // Get today's schedule for the info bar
+  const day = now.getDay();
+  const todaySchedule = (branch === 'CSE' && CSE_TIMETABLE[day]) ? CSE_TIMETABLE[day] : null;
 
   const handleStart = () => {
     const slot = TIME_SLOTS.find(s => s.id === selectedSlot) || TIME_SLOTS[0];
@@ -67,7 +91,6 @@ export default function Setup() {
       <div className="junsui-card">
         
         <div className="setup-header">
-          {/* Logo placeholder if image is missing */}
           <div style={{ width: 40, height: 40, background: 'var(--input-bg)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>GNIT</div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700 }}>Guru Nanak Institute of Technology</div>
@@ -94,6 +117,23 @@ export default function Setup() {
           </div>
         )}
 
+        {/* Auto-Detect Banner (CSE only) */}
+        {branch === 'CSE' && autoSubjectName && !isHoliday && (
+          <div style={{ 
+            background: 'rgba(99, 102, 241, 0.08)', 
+            border: '1px solid rgba(99, 102, 241, 0.2)', 
+            color: '#a5b4fc', 
+            padding: '12px 16px', 
+            borderRadius: '12px', 
+            marginBottom: '20px', 
+            fontSize: '13px',
+            fontWeight: 500
+          }}>
+            🎯 Auto-detected: <strong style={{ color: '#c7d2fe' }}>{autoSubjectName}</strong> — {formatTime12h(autoDetected.slot.startH, autoDetected.slot.startM)}
+            {autoDetected.entry?.isLab && <span style={{ marginLeft: 8, opacity: 0.7 }}>🔬 Lab</span>}
+          </div>
+        )}
+
         <div className="input-group">
           <label className="input-label">Class / Branch</label>
           <div className="select-wrapper">
@@ -104,28 +144,41 @@ export default function Setup() {
         </div>
 
         <div className="input-group">
-          <label className="input-label">Subject</label>
+          <label className="input-label">Lecture Slot</label>
           <div className="select-wrapper">
-            <select className="junsui-input" value={subject} onChange={e => setSubject(e.target.value)}>
-              {subjects.map(s => <option key={s} value={s}>{s}</option>)}
+            <select className="junsui-input" value={selectedSlot} onChange={e => handleSlotChange(parseInt(e.target.value))}>
+              {TIME_SLOTS.map((slot, idx) => {
+                // Show subject from timetable if CSE
+                let slotSubject = '';
+                if (branch === 'CSE' && todaySchedule && todaySchedule[idx]?.subject) {
+                  slotSubject = ` — ${todaySchedule[idx].subject}`;
+                  if (todaySchedule[idx].isLab) slotSubject += ' 🔬';
+                } else if (branch === 'CSE' && todaySchedule && todaySchedule[idx]?.label) {
+                  slotSubject = ` — ${todaySchedule[idx].label}`;
+                }
+                
+                return (
+                  <option key={slot.id} value={slot.id}>
+                    {slot.label}: {formatTime12h(slot.startH, slot.startM)} – {formatTime12h(slot.endH, slot.endM)}{slotSubject}
+                    {slot.id === autoDetected?.slot?.id ? ' ✦' : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
+          {branch === 'CSE' && (
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+              ✦ Current/next lecture auto-detected from CSE timetable
+            </div>
+          )}
         </div>
 
         <div className="input-group">
-          <label className="input-label">Lecture Slot</label>
+          <label className="input-label">Subject</label>
           <div className="select-wrapper">
-            <select className="junsui-input" value={selectedSlot} onChange={e => setSelectedSlot(parseInt(e.target.value))}>
-              {TIME_SLOTS.map(slot => (
-                <option key={slot.id} value={slot.id}>
-                  {slot.label} — {formatTime12h(slot.startH, slot.startM)} to {formatTime12h(slot.endH, slot.endM)}
-                  {slot.id === autoSlot.id ? ' ✦' : ''}
-                </option>
-              ))}
+            <select className="junsui-input" value={subject} onChange={e => setSubject(e.target.value)}>
+              {allSubjects.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            ✦ Auto-detected based on current time
           </div>
         </div>
 
