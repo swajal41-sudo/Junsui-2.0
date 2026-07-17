@@ -22,7 +22,7 @@ export default function Login() {
   }, [pin]);
 
   async function handleLogin(enteredPin) {
-    if (enteredPin === '2609') {
+    if (enteredPin === (import.meta.env.VITE_APP_PIN || '0000')) {
       setError('');
       setLoading(true);
       try {

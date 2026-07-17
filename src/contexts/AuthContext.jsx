@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    if (auth.app.options.apiKey === "YOUR_API_KEY") {
+    if (!import.meta.env.VITE_FIREBASE_API_KEY) {
       setLoading(false);
       return;
     }

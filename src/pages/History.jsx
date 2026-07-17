@@ -144,7 +144,7 @@ export default function History() {
       {!selectedSession ? (
         <div style={{ maxWidth: '600px', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-            <button onClick={() => navigate('/dashboard')} className="icon-btn" style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <button onClick={() => navigate('/')} className="icon-btn" style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
               <ArrowLeft size={24} />
             </button>
             <h1 style={{ margin: 0 }}>History</h1>
