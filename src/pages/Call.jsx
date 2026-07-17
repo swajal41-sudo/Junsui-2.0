@@ -176,17 +176,15 @@ export default function Call() {
             <button className="btn btn-absent" onClick={() => handleMark('absent')}>
               <X size={24} />
               Absent
-              <span style={{ fontSize: '10px', opacity: 0.6, marginTop: '2px' }}>A / ←</span>
             </button>
             <button className="btn btn-present" onClick={() => handleMark('present')}>
               <Check size={24} />
               Present
-              <span style={{ fontSize: '10px', opacity: 0.6, marginTop: '2px' }}>P / →</span>
             </button>
           </div>
           
           <button className="btn btn-undo" onClick={handleUndo} disabled={queue.length === 0} style={{ opacity: queue.length === 0 ? 0.5 : 1 }}>
-            <Undo2 size={16} /> Undo (Z)
+            <Undo2 size={16} /> Undo
           </button>
           
         </div>
