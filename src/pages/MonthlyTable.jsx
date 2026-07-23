@@ -3,18 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Calendar, Filter, CloudUpload, ExternalLink, CheckCircle } from 'lucide-react';
 import { db } from '../db/db';
 import { studentDataMap } from '../db/students';
-import { CSE_SUBJECTS, CSE_LABS } from '../db/timetable';
-
-const branches = [
-  { value: 'CSE', label: 'CSE', count: 44 },
-  { value: 'ETC', label: 'ETC', count: 51 },
-  { value: 'CSE-DS', label: 'CSE-DS', count: 54 },
-  { value: 'CSE-CS', label: 'CSE-CS', count: 48 }
-];
+import { CSE_SUBJECTS, CSE_LABS, CSE_CS_SUBJECTS, CSE_CS_LABS } from '../db/timetable';
+import { branches } from '../constants/branches';
 
 const allSubjects = [
   ...CSE_SUBJECTS.map(s => s.name),
   ...CSE_LABS.map(l => l.name),
+  ...CSE_CS_SUBJECTS.map(s => s.name),
+  ...CSE_CS_LABS.map(l => l.name),
   "Data Structures", "Object Oriented Programming", "Database Management Systems", "Computer Networks", "Operating Systems"
 ];
 const uniqueSubjects = [...new Set(allSubjects)];

@@ -7,7 +7,7 @@ import {
   isWorkingDay, isHolidaySaturday, getCurrentLecture, 
   getSubjectName, formatTime12h, getTimetableForBranch
 } from '../db/timetable';
-import useWindowSize from '../hooks/useWindowSize';
+
 
 export default function Dashboard() {
   const { logout, currentUser } = useAuth();
@@ -97,8 +97,14 @@ export default function Dashboard() {
                 
                 if (is2HrLab) skip.add(i + 1);
                 
+                const subjectLabel = entry?.subject ? getSubjectName(entry.subject, branch) : (entry?.label || 'Free');
+
                 items.push(
                   <div key={i} style={{ 
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 16px', borderRadius: '14px',
+                    background: isCurrent ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
+                    border: isCurrent ? '1px solid rgba(99,102,241,0.25)' : '1px solid rgba(255,255,255,0.04)',
                     transition: 'all 0.2s'
                   }}>
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)', minWidth: '85px', fontWeight: 500 }}>
@@ -107,18 +113,18 @@ export default function Dashboard() {
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {entry?.isLab && '🔬'} {subjectName}
+                        {entry?.isLab && '🔬'} {subjectLabel}
                         {isCurrent && <span style={{ fontSize: '8px', color: 'var(--primary-btn)', background: 'rgba(99,102,241,0.2)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>NOW</span>}
                       </div>
                     </div>
-                    {isPast && !isCurrent && <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Done</span>}
+                    {isPast && !isCurrent && <span style={{ fontSize: '11px', color: 'var(--text-secondary)', opacity: 0.5 }}>Done</span>}
                   </div>
                 );
               }
               return items;
             })()}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Holiday message */}

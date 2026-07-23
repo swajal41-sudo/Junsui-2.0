@@ -81,7 +81,7 @@ export default function Call() {
     if (lastRecord && session && session.branch !== 'DEMO') {
       db.attendance
         .where({ studentId: lastRecord.rollNo, date: session.date, subject: session.subject, branch: session.branch })
-        .last()
+        .reverse().first()
         .then(record => { if (record) db.attendance.delete(record.id); })
         .catch(err => console.error('Dexie undo failed:', err));
     }

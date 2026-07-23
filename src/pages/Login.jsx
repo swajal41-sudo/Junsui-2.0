@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff, Delete } from 'lucide-react';
@@ -15,13 +15,7 @@ export default function Login() {
 
   const PIN_LENGTH = 4;
 
-  useEffect(() => {
-    if (pin.length === PIN_LENGTH) {
-      handleLogin(pin);
-    }
-  }, [pin]);
-
-  async function handleLogin(enteredPin) {
+  const handleLogin = useCallback(async (enteredPin) => {
     if (enteredPin === (import.meta.env.VITE_APP_PIN || '0000')) {
       setError('');
       setLoading(true);
@@ -38,7 +32,13 @@ export default function Login() {
       setError('Incorrect PIN. Please try again.');
       setTimeout(() => setPin(''), 1000); // Clear pin after 1 second
     }
-  }
+  }, [login, navigate]);
+
+  useEffect(() => {
+    if (pin.length === PIN_LENGTH) {
+      handleLogin(pin);
+    }
+  }, [pin, handleLogin]);
 
   const handleKeyPress = (num) => {
     if (pin.length < PIN_LENGTH) {

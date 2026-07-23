@@ -8,12 +8,12 @@ import {
 } from '../db/timetable';
 import { branches } from '../constants/branches';
 
-const allSubjects = [
+const allSubjects = [...new Set([
   ...CSE_SUBJECTS.map(s => s.name),
   ...CSE_LABS.map(l => l.name),
   ...CSE_CS_SUBJECTS.map(s => s.name),
   ...CSE_CS_LABS.map(l => l.name),
-];
+])];
 
 export default function Setup() {
   const navigate = useNavigate();
@@ -221,7 +221,7 @@ export default function Setup() {
 
         <div className="input-group" style={{ marginBottom: '32px' }}>
           <label className="input-label">Number of Students</label>
-          <input type="number" className="junsui-input" value={numStudents} onChange={e => setNumStudents(parseInt(e.target.value))} />
+          <input type="number" className="junsui-input" value={numStudents} onChange={e => { const v = parseInt(e.target.value); if (!isNaN(v) && v > 0) setNumStudents(v); }} />
         </div>
 
         <button className="btn btn-primary" onClick={handleStart}>

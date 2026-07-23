@@ -50,7 +50,9 @@ export default function History() {
     
     // Filter by branch and subject just in case
     const filtered = sessionRecords.filter(r => r.branch === sess.branch && r.subject === sess.subject);
-    setRecords(filtered);
+    // Remove duplicate student entries (keep the latest record per student)
+    const uniqueRecords = Array.from(new Map(filtered.map(r => [r.studentId, r])).values());
+    setRecords(uniqueRecords);
   };
 
   const renderList = () => (
